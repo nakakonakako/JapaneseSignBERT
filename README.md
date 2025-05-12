@@ -1,5 +1,44 @@
 # SignBERT
 SignBERT+を参照した、自己教師あり学習による手話学習モデル
+
+## 研究概要
+**背景**  
+日本手話の連続認識には大量のアノテーション済みデータが必要ですが、そのデータは不足しており、高精度モデルの構築が困難です。従来は LSTM・Conformer＋CTC などの教師あり手法で孤立手話の認識には成功しているものの、連続手話では遷移部分の識別が難しく、またアノテーションコストも大きいという課題がありました :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}。
+
+**目的**  
+少量のアノテーション済みデータで高精度を実現できる「自己教師あり学習」を活用し、既存モデルの問題点を解明・改良することで、手話認識精度を実用レベルまで向上させる。さらにアノテーションコストを低減し、手話学習の普及に貢献する。
+
+**手法**  
+1. **データ前処理**  
+   - OpenPose／MediaPipe による動画からのキーポイント抽出  
+   - 時系列データとして整形  
+2. **自己教師あり事前学習**  
+   - Transformer Encoder（BERT）を骨組みとし、  
+     - Frame-MLM：ランダムフレーム全体をマスク  
+     - Point-MLM：ランダムキーポイントをマスク  
+   - 大規模非アノテーションデータから特徴を学習  
+3. **Fine-tuning**  
+   - 日本手話データ（約27,000サンプル）でモデルをタスク特化学習  
+4. **モデル改良**  
+   - ST-GCN／MS-G3D などの Graph Convolution  
+   - Sinusoidal Positional Encoding  
+   - Hand-Aware Decoder（MANO メッシュ）導入  
+5. **データ拡張**  
+   - ドイツ手話（RWTH-PHOENIX, SIGNUM）、米国手話（MS-ASL, WLASL, How2Sign）を追加
+
+**結果**  
+- 非アノテーション事前学習で損失が安定的に低下  
+- 孤立手話分類タスクで学習精度85%／検証精度55%（目標80%）達成  
+- データ拡張により認識率が約1.2%→4.5%に向上
+
+**今後の展望**  
+- RGB 情報や追加データセットによるさらなる精度向上  
+- 連続手話分類・翻訳タスクへの応用  
+- 実環境でのリアルタイム認識システム構築
+
+**キーワード**：手話認識／自己教師あり学習／BERT／Graph Convolution :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}  
+
+
 ## ファイル構成
 <dl>
 	<dt>詳細はディレクトリ内にあるREADME.mdおよびスクリプト内を参照してください</dt>
@@ -18,51 +57,6 @@ SignBERT+を参照した、自己教師あり学習による手話学習モデ�
   <dt>requirements.txt</dt>
   <dd>パッケージのインストールファイル
 </dl>
-
-## 研究の引継ぎ
-### venvの構築
-実行環境であるSupermicroでは、pyenv+venvにおける環境構築が推奨されています  
-このディレクトリで以下を実行することで環境構築ができます
-
-```bash
-$ pyenv install 3.12
-$ pyenv local 3.12
-$ python -m venv venv
-$ source venv/bin/activate
-$ pip install --upgrade pip
-$ pip install -r requirements.txt
-$ pip install signbert/model/thirdparty/manotorch
-```
-
-### chumpyの変更
-使用するパッケージであるchumpyにおいてバグがあるため、モジュールを修正します
-   - `venv/lib/python3.12/site-packages/chumpy/ch.py`における1203行目の
-`getargspec`を`getfullargspec`に変更
-   - `venv/lib/python3.12/site-packages/chumpy/__init__.py`における11行目をすべて削除
-
-### MANOファイルのダウンロード
-1. [MANO website](http://mano.is.tue.mpg.de/)でアカウントを作る(無料)
-2. `Models & Code`をダウンロード
-3. 解凍したフォルダの中身を`signbert/model/thirdparty/mano_assets`の中に入れる
-```bash
-mano_assets/
-    ├── ._.DS_Store
-    ├── .DS_Store		
-    ├── __init__.py
-    ├── LICENSE.txt
-    ├── models
-    │   ├── info.txt
-    │   ├── LICENSE.txt
-    │   ├── MANO_LEFT.pkl
-    │   ├── MANO_RIGHT.pkl
-    │   ├── SMPLH_female.pkl
-    │   └── SMPLH_male.pkl
-    └── webuser
-        └── ...
-```
-
-### スクリプトの実行コマンドおよびオプション
-それぞれの実行スクリプト内に記述があるので、そちらを参照してください
 
 ### データセット
 ```bash
